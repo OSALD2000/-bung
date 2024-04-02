@@ -15,6 +15,9 @@ class Schluessel {
     }
 
     public synchronized void setBenutzt(boolean benutzt) {
+        if(!benutzt){
+            notifyAll();
+        }
         this.benutzt = benutzt;
     }
 
@@ -26,8 +29,6 @@ class Schluessel {
 
 class Motor {
     private boolean hard;
-
-
     private int time_needed;
     private Random r = new Random();
 
@@ -72,21 +73,33 @@ class Mechaniker extends Thread {
             System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor);
 
             if (motor.isHard()) {
-                if (left.isBenutzt()) {
-                    System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "watied until neighbor right ::" + rightNeighbor.id + "  is done with left :: " + left);
+                synchronized (left) {
+                    if (left.isBenutzt()) {
+                        System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "watied until neighbor right ::" + rightNeighbor.id + "  is done with left :: " + left);
+                        try {
+                            left.wait();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                    left.setBenutzt(true);
+                    System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take left :: " + left);
                 }
 
-                while (left.isBenutzt()) /* Wait */ ;
-                left.setBenutzt(true);
-                System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take left :: " + left);
-
-                if (right.isBenutzt()) {
-                    System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "watied until neighbor left :: " + leftNeighbor.id + " is done with right :: " + right);
+                synchronized (right) {
+                    if (right.isBenutzt()) {
+                        System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "watied until neighbor left :: " + leftNeighbor.id + " is done with right :: " + right);
+                        try {
+                            right.wait();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    right.setBenutzt(true);
+                    System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take right :: " + right);
                 }
 
-                while (right.isBenutzt()) /* Wait */ ;
-                right.setBenutzt(true);
-                System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take right :: " + right);
 
                 try {
                     int time = motor.getTime_needed();
@@ -112,12 +125,19 @@ class Mechaniker extends Thread {
                     System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take right :: " + right);
 
                 } else {
-                    if (left.isBenutzt()) {
-                        System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "watied until neighbor right ::" + rightNeighbor.id + "  is done with left  :: " + left);
+                    synchronized (left) {
+                        if (left.isBenutzt()) {
+                            System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "watied until neighbor right ::" + rightNeighbor.id + "  is done with left  :: " + left);
+                            try {
+                                left.wait();
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        left.setBenutzt(true);
+                        System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take left :: " + left);
                     }
-                    while (left.isBenutzt()) /* Wait */ ;
-                    left.setBenutzt(true);
-                    System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take left :: " + left);
+
                 }
 
                 try {
@@ -209,11 +229,11 @@ public class Aufgabe_4 {
         }
 
 
-        mechanikerArray[0].setRightNeighbor(mechanikerArray[1]);
-        mechanikerArray[0].setLeftNeighbor(mechanikerArray[mechanikerArray.length - 1]);
+        mechanikerArray[0].setRightNeighbor(mechanikerArray[mechanikerArray.length - 1]);
+        mechanikerArray[0].setLeftNeighbor(mechanikerArray[1]);
 
-        mechanikerArray[mechanikerArray.length - 1].setRightNeighbor(mechanikerArray[0]);
-        mechanikerArray[mechanikerArray.length - 1].setLeftNeighbor(mechanikerArray[mechanikerArray.length - 2]);
+        mechanikerArray[mechanikerArray.length - 1].setRightNeighbor(mechanikerArray[mechanikerArray.length - 2]);
+        mechanikerArray[mechanikerArray.length - 1].setLeftNeighbor(mechanikerArray[0]);
 
 
         for (int i = 1; i < mechanikerArray.length - 1; i++) {
