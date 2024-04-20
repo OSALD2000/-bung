@@ -269,19 +269,19 @@ public class Main {
 
         System.out.println("All Worker are done !! \n Worker done the work parallel. time needed : " + timeElapsed_parallel + " ms");
 
-        long start_not_parallel = System.currentTimeMillis();
-
-        System.out.println("\n \n \n \n");
-
-        System.out.println("Worker start sequential !!");
-
-        Arrays.stream(mechanikerArray).toList().forEach(Mechaniker::run);
-
-        long finish_not_parallel = System.currentTimeMillis();
-
-        long timeElapsed_not_parallel = finish_not_parallel - start_not_parallel;
-
-        System.out.println("All Worker are done !! \n Worker done the work sequential. time needed : " + timeElapsed_not_parallel + " ms");
+//        long start_not_parallel = System.currentTimeMillis();
+//
+//        System.out.println("\n \n \n \n");
+//
+//        System.out.println("Worker start sequential !!");
+//
+//        Arrays.stream(mechanikerArray).toList().forEach(Mechaniker::run);
+//
+//        long finish_not_parallel = System.currentTimeMillis();
+//
+//        long timeElapsed_not_parallel = finish_not_parallel - start_not_parallel;
+//
+//        System.out.println("All Worker are done !! \n Worker done the work sequential. time needed : " + timeElapsed_not_parallel + " ms");
 
     }
 }
