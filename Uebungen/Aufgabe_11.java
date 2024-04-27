@@ -18,13 +18,13 @@ class Auto extends Thread
     {
         this.id = id;
         this.parkPlace = parkPlace;
-        this.parkTime = (int) (Math.random() * 20000);
+        this.parkTime = (int) (Math.random() * 2000);
     }
 
     private void driveAround()
     {
         try {
-            int time = (int) (Math.random() * 10000);
+            int time = (int) (Math.random() * 1000);
             System.out.println("Auto "+id+" drive around for " + time);
             sleep(time);
         } catch (InterruptedException e) {
@@ -52,7 +52,7 @@ class Auto extends Thread
 class ParkPlace
 {
 
-    private final Semaphore semaphore;
+    private Semaphore semaphore;
     private Auto auto;
 
     public ParkPlace(int permits, boolean fair) {
@@ -61,7 +61,6 @@ class ParkPlace
 
     public void parkAuto(Auto auto)
     {
-        synchronized (semaphore) {
             System.out.println("Auto " + auto.id + " park  for " + auto.parkTime);
 
             this.auto = auto;
@@ -72,7 +71,6 @@ class ParkPlace
             }
 
             System.out.println("Auto " + auto.id + " left park place");
-        }
     }
 
     public void acquire(Auto auto) throws InterruptedException {
@@ -89,14 +87,14 @@ class ParkPlace
 
 public class Aufgabe_11
 {
-    public final static int N = 25;
+    public final static int N = 3;
     private static final ArrayList<Auto> autos = new ArrayList<>();
 
     public static void main(String[] args)
     {
-        ParkPlace parkPlace = new ParkPlace(N, true);
+        ParkPlace parkPlace = new ParkPlace(N, false);
 
-        for(int i = 0; i < N; i++)
+        for(int i = 0; i < 25; i++)
         {
             autos.add(new Auto(i, parkPlace));
         }
