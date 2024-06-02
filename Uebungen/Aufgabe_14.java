@@ -1,10 +1,11 @@
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Stream;
 
 class Resource {
-    private Integer resource;
+    private Long resource;
     private Semaphore semaphore;
 
 
@@ -17,41 +18,45 @@ class Resource {
         semaphore = new Semaphore(1, true);
     }
 
-    public synchronized boolean write(Integer resource) {
+    public boolean write(Long resource) {
         boolean operated = false;
 
-        try {
-            this.semaphore.acquire();
             if (!this.isFilled()) {
                 this.resource = resource;
-                int time = (int) (Math.random() * 500);
-                System.out.println("writing ----> " + this.resource + " need time : " + time);
-                Thread.sleep(time);
+                int time = (int) (Math.random() *  1000);
+                System.out.println("Value  " + resource + " ist in Resource geschrieben!!");
+                System.out.println("writing ----> " + this.resource + " time " + time);
+                try {
+                    Thread.sleep(time);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 this.setFilled(true);
                 operated = true;
-                System.out.println("Value  " + resource + " ist in Resource geschrieben!!");
+
             }
-            this.semaphore.release();
             return operated;
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+
 
     }
 
-    public synchronized Integer read() {
-        Integer data = null;
-        try {
-            this.semaphore.acquire();
+    public Long read() {
+            Long data = null;
+
             if (this.isFilled()) {
                 data = this.resource;
+                int time = (int) (Math.random() *  1000);
+                System.out.println("Verbraucer hat " + data + " in Resource gebraucht!!");
+                System.out.println("reading ----> " + this.resource + " time " + time);
+                try {
+                    Thread.sleep(time);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
                 this.setFilled(false);
             }
-            this.semaphore.release();
             return data;
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 
@@ -77,11 +82,11 @@ class Resource {
 class Erzeuger extends Thread {
 
     private Resource r;
-    private ArrayList<Integer> items;
+    private ArrayList<Long> items;
 
     @Override
     public void run() {
-        for (Integer i : this.items)
+        for (Long i : this.items)
         {
             while (!r.write(i)) /*wait*/;
         }
@@ -92,8 +97,8 @@ class Erzeuger extends Thread {
     public Erzeuger(Resource r, int numberOfItem) {
         this.r = r;
         this.items = new ArrayList<>() {{
-            for (int i = 0; i < numberOfItem; i++) {
-                add(getRandomNumber());
+            for (long i = 0; i < numberOfItem; i++) {
+                add(i);
             }
         }};
         System.out.println("Erzeuger elements !!");
@@ -101,26 +106,35 @@ class Erzeuger extends Thread {
         System.out.println();
     }
 
-    private int getRandomNumber() {
-        return (int) (Math.random() * 100);
+    private long getRandomNumber() {
+        return (long) (Math.random() * 100);
     }
 }
 
 class Verbraucer extends Thread {
 
     private Resource r;
-    private ArrayList<Integer> items;
+    private ArrayList<Long> items;
 
     @Override
     public void run()
     {
+        long versuch = 0L;
         while (!r.isDone())
         {
-            Integer i = r.read();
+            Long i = r.read();
             if(i != null)
             {
                 this.items.add(i);
-                System.out.println("Verbraucer hat " + i + " in Resource gebraucht!!");
+            }else System.out.println("no Resources found try number :: " + versuch++);
+        }
+
+        while (r.isFilled())
+        {
+            Long i = r.read();
+            if(i != null)
+            {
+                this.items.add(i);
             }
         }
 
@@ -142,7 +156,7 @@ public class Aufgabe_14 {
     public static void main(String[] args) {
         Resource r = new Resource();
         Verbraucer v = new Verbraucer(r);
-        Erzeuger e = new Erzeuger(r , 250);
+        Erzeuger e = new Erzeuger(r , 11);
 
         e.start();
         v.start();

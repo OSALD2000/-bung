@@ -1,12 +1,15 @@
 import java.util.Arrays;
 import java.util.Random;
-/*
-class Schluessel {
+
+
+class Schluessel_20
+{
+
     private boolean benutzt;
     public final int id;
 
-    public Schluessel() {
-        id = (int) (Math.random() * 10000);
+    public Schluessel_20() {
+        id = (int) (Math.random() * 100);
         this.benutzt = false;
     }
 
@@ -15,26 +18,49 @@ class Schluessel {
     }
 
     public synchronized void setBenutzt(boolean benutzt) {
-        if(!benutzt){
-            notifyAll();
-        }
         this.benutzt = benutzt;
     }
 
+    public synchronized void takeSchluessel(boolean left, int mechanikerID, Motor_20 motor, Mechaniker_20 neighbor)
+    {
+        if(isBenutzt()){
+            try {
+                if(left)
+                {
+                    System.out.println("Mechaniker " + mechanikerID+ " work with motor : " + motor + "watied until neighbor right ::" + neighbor.id + "  is done with left :: " + this);
+                }else
+                {
+                    System.out.println("Mechaniker " + mechanikerID + " work with motor : " + motor + "watied until neighbor left :: " + neighbor.id + " is done with right :: " + this);
+                }
+                this.wait();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        setBenutzt(true);
+    }
+
+    public synchronized void leftSchluessel()
+    {
+        this.notifyAll();
+    }
     @Override
     public String toString() {
         return "Schluessel id : " + this.id;
     }
 }
 
-class Motor {
-    private boolean hard;
-    private int time_needed;
-    private Random r = new Random();
+class Motor_20 {
+    private final boolean hard;
+    private final int time_needed;
 
-    public Motor() {
-        this.hard = r.nextInt(100 - 1) + 1 <= 45;
-        this.time_needed = (int) (Math.random() * 10000);
+
+    public Motor_20() {
+        Random r = new Random();
+
+        this.hard = r.nextInt(100 - 1) + 1 <= 40;;
+
+        this.time_needed = (int) (Math.random() * 200);
     }
 
     public int getTime_needed() {
@@ -51,7 +77,7 @@ class Motor {
     }
 }
 
-class Mechaniker extends Thread {
+class Mechaniker_20 extends Thread {
 
     private Schluessel_20 left;
     private Schluessel_20 right;
@@ -60,7 +86,17 @@ class Mechaniker extends Thread {
 
     private Motor_20[] motors;
 
-    private final int id;
+    public final int id;
+
+
+
+    public Mechaniker_20(Schluessel_20 left, Schluessel_20 right, int workLoad, int id) {
+        this.motors = Arrays.stream(new Motor_20[workLoad]).toList().stream().map(m -> new Motor_20()).toArray(Motor_20[]::new);
+        this.left = left;
+        this.right = right;
+        this.id = id;
+    }
+
 
     @Override
     public void run() {
@@ -73,33 +109,14 @@ class Mechaniker extends Thread {
             System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor);
 
             if (motor.isHard()) {
-                synchronized (left) {
-                    if (left.isBenutzt()) {
-                        System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "watied until neighbor right ::" + rightNeighbor.id + "  is done with left :: " + left);
-                        try {
-                            left.wait();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
+                left.takeSchluessel(true, this.id, motor, rightNeighbor);
+                System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take left :: " + left);
 
-                    left.setBenutzt(true);
-                    System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take left :: " + left);
-                }
+                right.takeSchluessel(false, this.id, motor, leftNeighbor);
+                System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take right :: " + right);
 
-                synchronized (right) {
-                    if (right.isBenutzt()) {
-                        System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "watied until neighbor left :: " + leftNeighbor.id + " is done with right :: " + right);
-                        try {
-                            right.wait();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                    right.setBenutzt(true);
-                    System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take right :: " + right);
-                }
 
+                System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + " Work Done");
 
                 try {
                     int time = motor.getTime_needed();
@@ -109,61 +126,27 @@ class Mechaniker extends Thread {
                     throw new RuntimeException(e);
                 }
 
-                System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + " Work Done");
-
-                left.setBenutzt(false);
-                right.setBenutzt(false);
-
-            } else {
-
-                if (!left.isBenutzt()) {
-                    left.setBenutzt(true);
-                    System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take left :: " + left);
-
-                } else if (!right.isBenutzt()) {
-                    right.setBenutzt(true);
-                    System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take right :: " + right);
-
-                } else {
-                    synchronized (left) {
-                        if (left.isBenutzt()) {
-                            System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "watied until neighbor right ::" + rightNeighbor.id + "  is done with left  :: " + left);
-                            try {
-                                left.wait();
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                        left.setBenutzt(true);
-                        System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take left :: " + left);
-                    }
-
-                }
-
-                try {
-                    int time = motor.getTime_needed();
-                    System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + " need : " + time + " ms");
-                    sleep(time);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-
-                System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + " Work Done");
-
-                left.setBenutzt(false);
-                right.setBenutzt(false);
+                left.leftSchluessel();
+                right.leftSchluessel();
             }
+            else
+            {
+                left.takeSchluessel(true, this.id, motor, rightNeighbor);
+                System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + "take left :: " + left);
+
+                try {
+                    int time = motor.getTime_needed();
+                    System.out.println("Mechaniker " + this.id + " work with motor : " + i + " " + motor + " need : " + time + " ms");
+                    sleep(time);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                left.leftSchluessel();
+            }
+
+            System.out.println("Mechaniker " + this.id + " Work Done");
         }
-
-        System.out.println("Mechaniker " + this.id + " Work Done");
-    }
-
-
-    public Mechaniker(Schluessel_20 left, Schluessel_20 right, int workLoad) {
-        this.motors = Arrays.stream(new Motor_20[workLoad]).toList().stream().map(m -> new Motor_20()).toArray(Motor_20[]::new);
-        this.left = left;
-        this.right = right;
-        id = (int) (Math.random() * 100000);
     }
 
 
@@ -207,17 +190,16 @@ class Mechaniker extends Thread {
 }
 
 
-public class Aufgabe_4 {
-    private static final int N = 5;
+public class Aufgabe_20 {
+    private static final int N = 8;
     private static Mechaniker_20[] mechanikerArray = new Mechaniker_20[N];
 
     public static void main(String[] args) {
-
         Schluessel_20 l = new Schluessel_20();
         Schluessel_20 r = new Schluessel_20();
 
         for (int i = 0; i < mechanikerArray.length; i++) {
-            Mechaniker_20 h = new Mechaniker_20(l, r, N);
+            Mechaniker_20 h = new Mechaniker_20(l, r, N, i);
             mechanikerArray[i] = h;
 
             l = mechanikerArray[i].getRight();
@@ -250,7 +232,7 @@ public class Aufgabe_4 {
 
         long start_parallel = System.currentTimeMillis();
 
-        Arrays.stream(mechanikerArray).toList().stream().forEach(mechaniker -> mechaniker.start());
+        Arrays.stream(mechanikerArray).toList().forEach(Thread::start);
 
         System.out.println("All Threads are running !!");
 
@@ -270,20 +252,19 @@ public class Aufgabe_4 {
 
         System.out.println("All Worker are done !! \n Worker done the work parallel. time needed : " + timeElapsed_parallel + " ms");
 
-        long start_not_parallel = System.currentTimeMillis();
-
-        System.out.println("\n \n \n \n");
-
-        System.out.println("Worker start sequential !!");
-
-        Arrays.stream(mechanikerArray).toList().stream().forEach(mechaniker -> mechaniker.run());
-
-        long finish_not_parallel = System.currentTimeMillis();
-
-        long timeElapsed_not_parallel = finish_not_parallel - start_not_parallel;
-
-        System.out.println("All Worker are done !! \n Worker done the work sequential. time needed : " + timeElapsed_not_parallel + " ms");
+//        long start_not_parallel = System.currentTimeMillis();
+//
+//        System.out.println("\n \n \n \n");
+//
+//        System.out.println("Worker start sequential !!");
+//
+//        Arrays.stream(mechanikerArray).toList().forEach(Mechaniker::run);
+//
+//        long finish_not_parallel = System.currentTimeMillis();
+//
+//        long timeElapsed_not_parallel = finish_not_parallel - start_not_parallel;
+//
+//        System.out.println("All Worker are done !! \n Worker done the work sequential. time needed : " + timeElapsed_not_parallel + " ms");
 
     }
 }
-*/
